@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+// import HelloWorld from './components/HelloWorld.vue'
 // import Test from './components/Test.vue'
 import Hi from './components/Hi.vue'
 import Chat from './components/Chat.vue'

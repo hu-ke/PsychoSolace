@@ -10,8 +10,15 @@
 </template>
 
 <script setup lang="ts">
-import axios from "axios";
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch, defineProps } from "vue";
+
+const props = defineProps({
+  // 定义一个名为 username 的 prop，类型为 String，且是必需的
+  textList: {
+    type: Array<string>,
+    required: true
+  }
+});
 
 const texts = ref([
   '首先，我需要回顾之前的对话历史。',
@@ -28,24 +35,45 @@ const texts = ref([
   '现在用户最新的返回是Ogg格式，',
   '因此需要调整前端代码以适应audio/ogg媒体类型。'
 ])
+const textList = ref<string[]>([])
 
+watch(() => [...props.textList], (newVal, oldVal) => {
+  for (let i = oldVal.length; i < newVal.length; i++) {
+    if (newVal[i]) {
+      textList.value.push(newVal[i])
+    }
+  }
+})
+const audioIndexUrlMap = ref<any>({})
 const choose = (txt:string, i:number) => {
   textList.value.push(txt)
-  downloadAudio(txt)
   texts.value.splice(i, 1)
 }
 
-const textList = ref<string[]>([])
+watch(() => [...textList.value], (list, prevList) => {
+  list.slice(prevList.length)
+  for (let i = prevList.length; i < list.length; i++) {
+    if (list[i]) {
+      downloadAudio(list[i], i)
+    }
+  }
+})
+
+watch(audioIndexUrlMap, mp => {
+  audioUrls.value = Object.assign(audioUrls.value, mp)
+}, {
+  deep: true
+})
 const audioUrls = ref<any>([])
-// const baseUrl = 'http://127.0.0.1:6006'
-const baseUrl = 'https://reader.guru/chatapi'
+const baseUrl = 'http://127.0.0.1:6006/chatapi'
+// const baseUrl = '${baseUrl}'
 
 const audioPlayer = ref()
-const isPlaying = ref(false)
+// const isPlaying = ref(false)
 
 const loadModels = () => {
-  fetch('https://reader.guru/chatapi/set_gpt_weights?weights_path=/root/GPT-SoVITS/GPT_weights_v2/huke-e5.ckpt')
-  fetch('https://reader.guru/chatapi/set_sovits_weights?weights_path=/root/GPT-SoVITS/SoVITS_weights_v2/huke_e4_s36.pth')
+  fetch(`${baseUrl}/set_gpt_weights?weights_path=/root/GPT-SoVITS/GPT_weights_v2/huke-e5.ckpt`)
+  fetch(`${baseUrl}/set_sovits_weights?weights_path=/root/GPT-SoVITS/SoVITS_weights_v2/huke_e4_s36.pth`)
 }
 onMounted(() => {
   loadModels()
@@ -63,10 +91,6 @@ const checkAndPlayAudioIndex = (index: number) => {
 }
 
 const start = () => {
-  // for (let i = 0; i < textList.value.length; i++) {
-  //   let text = textList.value[i]
-  //   downloadAudio(text)
-  // }
   checkAndPlayAudioIndex(0)
 }
 
@@ -88,9 +112,9 @@ const playAudio = async(url: string) => {
   })
 }
 
-const downloadAudio = async(text: string) => {
+const downloadAudio = async(text: string, index: number) => {
   const media_type = 'wav'
-  const url = `https://reader.guru/chatapi/tts?text=${text}&text_lang=zh&ref_audio_path=huke-sample.m4a&prompt_lang=zh&prompt_text=新昌AI,新昌小程序所需材料,精修,小程序代码,资讯信息&text_split_method=cut5&batch_size=1&media_type=${media_type}&streaming_mode=true`
+  const url = `${baseUrl}/tts?text=${text}&text_lang=zh&ref_audio_path=huke-sample.m4a&prompt_lang=zh&prompt_text=新昌AI,新昌小程序所需材料,精修,小程序代码,资讯信息&text_split_method=cut5&batch_size=1&media_type=${media_type}&streaming_mode=true`
   try {
     // 替换为实际的后端 API 端点
     const response = await fetch(url);
@@ -112,8 +136,8 @@ const downloadAudio = async(text: string) => {
     const blob = new Blob(chunks, { type: response.headers.get('Content-Type') });
     const audioUrl = URL.createObjectURL(blob);
     console.log('[audioUrl]', audioUrl)
-    audioUrls.value.push(audioUrl)
-    
+    // audioUrls.value.push(audioUrl)
+    audioIndexUrlMap.value[index] = audioUrl
   } catch (error) {
       console.error('Error fetching or playing audio:', error);
   }

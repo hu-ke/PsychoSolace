@@ -12,11 +12,13 @@
       <label>Top-p: <input v-model="topP" type="range" min="0" max="1" step="0.1" value="0.8"></label>
       <button @click="clearHistory">Clear session</button>
     </div>
+    <HelloWorld :textList="texts"/>
   </div>
 </template>
 
 <script setup>
 import { ref, watch, computed } from 'vue';
+import HelloWorld from './HelloWorld.vue';
 const sessionId = ref(Date.now().toString());
 const messages = ref([]);
 const inputMessage = ref('');
