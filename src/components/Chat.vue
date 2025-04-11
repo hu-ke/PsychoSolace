@@ -26,6 +26,7 @@ const buffer = ref('');
 const texts = ref([])
 const SPLIT_LEN = 5; // 5个字符串分割一次
 const isAnswering = ref(false)
+const punctuation = '，。；：“”、?？！!'
 
 const lastRobotContent = computed(() => {
   const robotMessages = messages.value.filter(m => m.role === 'robot');
@@ -36,12 +37,24 @@ const lastRobotContent = computed(() => {
   return ''
 })
 
+const punctuationIndex = (str) => {
+  for (let i = 0; i < punctuation.length; i++) {
+    let punct = punctuation[i]
+    let idx = str.indexOf(punct)
+    if (idx > -1) {
+      return idx
+    }
+  }
+  return -1
+}
+
 watch(buffer, bf => {
   if (bf) {
-    let prevString = texts.value.join('')
-    let nowString = bf.slice(prevString.length)
-    if (nowString.length > SPLIT_LEN) {
-      texts.value.push(nowString.slice(0, SPLIT_LEN))
+    let prevStr = texts.value.join('')
+    let currentStr = bf.slice(prevStr.length)
+    let idx = punctuationIndex(currentStr)
+    if (idx > -1) {
+      texts.value.push(currentStr.slice(0, idx + 1))
     }
     updateLastMessage('robot', bf);
   }
