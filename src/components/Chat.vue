@@ -16,19 +16,47 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 const sessionId = ref(Date.now().toString());
 const messages = ref([]);
 const inputMessage = ref('');
 const temperature = ref(0.7);
 const topP = ref(0.8);
 const buffer = ref('');
+const texts = ref([])
+const SPLIT_LEN = 5; // 5个字符串分割一次
+const isAnswering = ref(false)
+
+const lastRobotContent = computed(() => {
+  const robotMessages = messages.value.filter(m => m.role === 'robot');
+  if (robotMessages.length > 0) {
+    const lastMessage = robotMessages[robotMessages.length - 1];
+    return lastMessage?.content || ''
+  }
+  return ''
+})
 
 watch(buffer, bf => {
   if (bf) {
+    let prevString = texts.value.join('')
+    let nowString = bf.slice(prevString.length)
+    if (nowString.length > SPLIT_LEN) {
+      texts.value.push(nowString.slice(0, SPLIT_LEN))
+    }
     updateLastMessage('robot', bf);
   }
 })
+
+watch(isAnswering, anwsering => {
+  // 本轮回答已经结束
+  if (!anwsering) {
+    const remainString = lastRobotContent.value.slice(texts.value.join('').length)
+    texts.value.push(remainString)
+  }
+})
+
+console.log('lastRobotContent', lastRobotContent)
+console.log('texts', texts)
 
 const sendMessage = async () => {
   const message = inputMessage.value;
@@ -57,7 +85,7 @@ const sendMessage = async () => {
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-
+    isAnswering.value = true
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -74,6 +102,8 @@ const sendMessage = async () => {
     buffer.value = '';
   } catch (error) {
     console.error('Error:', error);
+  } finally {
+    isAnswering.value = false
   }
 };
 
