@@ -16,21 +16,27 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 const sessionId = ref(Date.now().toString());
 const messages = ref([]);
 const inputMessage = ref('');
 const temperature = ref(0.7);
 const topP = ref(0.8);
-let buffer = '';
+const buffer = ref('');
+
+watch(buffer, bf => {
+  if (bf) {
+    updateLastMessage('robot', bf);
+  }
+})
 
 const sendMessage = async () => {
   const message = inputMessage.value;
   inputMessage.value = '';
 
   // 添加用户消息
-  appendMessage('robot', message)
-  appendMessage('robot', buffer)
+  appendMessage('user', message)
+  appendMessage('robot', buffer.value)
 
   // 获取参数
   const params = {
@@ -61,12 +67,11 @@ const sendMessage = async () => {
         if (!chunk) continue;
         const data = JSON.parse(chunk);
         if (!data.is_final) {
-          buffer = data.content;
-          updateLastMessage('robot', buffer);
+          buffer.value = data.content;
         }
       }
     }
-    buffer = '';
+    buffer.value = '';
   } catch (error) {
     console.error('Error:', error);
   }
@@ -81,8 +86,6 @@ const updateLastMessage = (role, content) => {
   if (robotMessages.length > 0) {
     const lastMessage = robotMessages[robotMessages.length - 1];
     lastMessage.content = content;
-  } else {
-    appendMessage(role, content);
   }
 };
 
