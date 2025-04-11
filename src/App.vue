@@ -2,12 +2,14 @@
 import HelloWorld from './components/HelloWorld.vue'
 // import Test from './components/Test.vue'
 import Hi from './components/Hi.vue'
+import Chat from './components/Chat.vue'
 </script>
 
 <template>
   <!-- <Test /> -->
-  <HelloWorld />
+  <!-- <HelloWorld /> -->
   <!-- <Hi /> -->
+  <Chat />
 </template>
 
 <style scoped>
