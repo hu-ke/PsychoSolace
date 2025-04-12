@@ -1,5 +1,18 @@
 <template>
   <div class="chat-container">
+    <div class="intro">
+      <p>亲爱的朋友，欢迎来到心灵港湾🌙</p>
+      <p>
+        这里是基于<a href="https://github.com/scutcyr/SoulChat2.0" target="_blank">SoulChat2.0</a>情感引擎与<a href="https://github.com/RVC-Boss/GPT-SoVITS" target="_blank">GPT_SoVITS</a> AI语音克隆技术打造的温暖空间。我不仅能用最懂你的方式文字交流，还能用治愈声线给予回应，让每次对话都像老友重逢般亲切自然。
+      </p>
+      <div>
+        您可以随时对我说：
+        <div>"今天上司否定了我的方案，好挫败…"</div>
+        <div>"能陪我聊聊童年那棵老槐树吗？"</div>
+        <div>"用妈妈的声音给我读首诗好吗？"</div>
+        让我们从一句"你好"开始，书写属于我们的治愈故事吧❤️
+      </div>
+    </div>
     <div class="chat-messages" ref="messagesContainer">
       <div 
         v-for="(msg, index) in messages"
@@ -117,6 +130,9 @@ const endVoice = () => {
 </script>
 
 <style lang="scss" scoped>
+.intro {
+  padding: 20px;
+}
 /* 保持原有样式不变 */
 .chat-container {
   position: relative;
