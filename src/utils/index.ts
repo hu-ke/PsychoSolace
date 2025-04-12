@@ -46,7 +46,7 @@ export const playAudio = async(audio: HTMLAudioElement, url: string) => {
 }
 
 export const playAudioUrls = async(audioUrls: string[]) => {
-  // console.log('[playAudioUrls]', audioUrls)
+  console.log('[playAudioUrls]', audioUrls)
   const audio = new Audio('')
   for (let i = 0; i < audioUrls.length; i++) {
     await playAudio(audio, audioUrls[i])

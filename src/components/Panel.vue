@@ -74,7 +74,8 @@ const { audioUrls, finished: downloadingFinished, reset: resetDownloader } = use
 
 // 按序轮询检测播放，不必等audioUrls全部加载完
 const { finished: audioPlayingFinished, reset: resetAudioPlayer } = useAudioPlayer({
-  audioUrls
+  audioUrls,
+  downloadingFinished
 })
 
 watch(downloadingFinished, async(finished) => {

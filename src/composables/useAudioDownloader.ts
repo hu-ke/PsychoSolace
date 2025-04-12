@@ -46,7 +46,7 @@ export const useAudioDownloader = ({textList}: AudioDownloaderProps) => {
   }
 
   return {
-    audioUrls,
+    audioUrls: computed(() => audioUrls.value.filter((url: string) => url)),
     finished,
     reset
   }
