@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Panel from './components/Panel.vue';
-
+// import Microphone from './components/microphone.vue';
 // import HelloWorld from './components/HelloWorld.vue'
 // import Test from './components/Test.vue'
 // import Hi from './components/Hi.vue'
@@ -13,6 +13,7 @@ import Panel from './components/Panel.vue';
   <!-- <Hi /> -->
   <!-- <Chat /> -->
    <Panel />
+  <!-- <Microphone /> -->
 </template>
 
 <style>

@@ -39,7 +39,7 @@
       </div>
     </div>
 
-    <div class="voice-tip" v-show="showVoiceTip">按住 说话</div>
+    <div class="voice-tip" v-show="showVoiceTip">录音中...松开发送</div>
     <div class="input-container">
       <input
         v-model="inputMessage"
@@ -48,7 +48,7 @@
         placeholder="说点什么吧..."
         @keyup.enter="sendMessage"
       >
-      <button class="voice-btn" @mousedown="startVoice" @mouseup="endVoice">语音</button>
+      <button class="voice-btn" @mousedown="startVoice" @mouseup="endVoice">按住说话</button>
     </div>
   </div>
 </template>
@@ -62,6 +62,7 @@ import robotPhoto from '../assets/robot-photo.png';
 import { MESSAGE_TYPES, TEMPERATURE, TOP_P } from '../utils/constants';
 import LoadingDots from './LoadingDots.vue';
 import Playing from './Playing.vue';
+import { useASR } from '../composables/useASR';
 const sessionId = ref(Date.now().toString());
 const preText = ref('我可以帮你聊聊心理学相关的问题，比如情绪管理、人际关系、个人成长等。你最近有什么困扰吗？')
 
@@ -88,6 +89,8 @@ const { finished: audioPlayingFinished, reset: resetAudioPlayer } = useAudioPlay
   audioUrls,
   downloadingFinished
 })
+
+const { transcribedText, startRecording, stopRecording } = useASR()
 
 onMounted(async() => {
   const audioUrl = await downloadAudio(preText.value)
@@ -246,11 +249,17 @@ const sendMessage = async() => {
 // 语音功能占位
 const startVoice = () => {
   showVoiceTip.value = true
+  startRecording()
   // 实际应接入语音识别API
 }
 
+watch(transcribedText, text => {
+  console.log('[transcribedText]', text)
+})
+
 const endVoice = () => {
   showVoiceTip.value = false
+  stopRecording()
   // 结束语音输入处理
 }
 </script>
