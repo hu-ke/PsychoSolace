@@ -32,20 +32,24 @@ export const punctuationIndex = (str: string) => {
   return -1
 }
 
+export const playAudio = async(audio: HTMLAudioElement, url: string) => {
+  audio.src = url
+  audio.play()
+  return new Promise((resolve) => {
+    const onEnded = () => {
+      console.log(`${audio.src} played.`)
+      audio.removeEventListener('ended', onEnded)
+      resolve('')
+    }
+    audio.addEventListener('ended', onEnded)
+  })
+}
+
 export const playAudioUrls = async(audioUrls: string[]) => {
+  // console.log('[playAudioUrls]', audioUrls)
   const audio = new Audio('')
-  const playAudio = async(url: string) => {
-    audio.src = url
-    audio.play()
-    return new Promise((resolve) => {
-      audio.addEventListener('ended', () => {
-        console.log('audio playing ended')
-        resolve('')
-      })
-    })
-  }
   for (let i = 0; i < audioUrls.length; i++) {
-    await playAudio(audioUrls[i])
+    await playAudio(audio, audioUrls[i])
   }
 }
 

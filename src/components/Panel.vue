@@ -42,7 +42,6 @@
       >
       <button class="voice-btn" @mousedown="startVoice" @mouseup="endVoice">语音</button>
     </div>
-    <audio ref="audioPlayer" controls style="visibility: hidden; position: fixed;"></audio>
   </div>
 </template>
 
@@ -62,7 +61,6 @@ const messages = reactive([
     audioUrls: []
   }
 ])
-const audioPlayer = ref()
 const inputMessage = ref('')
 const showVoiceTip = ref(false)
 const messagesContainer = ref(null)
@@ -70,14 +68,13 @@ const isAnswering = ref(false)
 const buffer = ref('');
 const textChunks = ref([])
 
-const { audioUrls, finished: downloadingFinished, reset } = useAudioDownloader({
+const { audioUrls, finished: downloadingFinished, reset: resetDownloader } = useAudioDownloader({
   textList: textChunks
 })
 
 // 按序轮询检测播放，不必等audioUrls全部加载完
-useAudioPlayer({
-  audioRef: audioPlayer,
-  audioUrls,
+const { finished: audioPlayingFinished, reset: resetAudioPlayer } = useAudioPlayer({
+  audioUrls
 })
 
 watch(downloadingFinished, async(finished) => {
@@ -86,8 +83,14 @@ watch(downloadingFinished, async(finished) => {
       sender: MESSAGE_TYPES.ROBOT,
       audioUrls: audioUrls.value
     })
+  }
+})
+
+watch(audioPlayingFinished, (finished) => {
+  if (finished) {
+    resetAudioPlayer()
     textChunks.value = []
-    reset()
+    resetDownloader()
   }
 })
 
@@ -128,12 +131,12 @@ watch(isAnswering, anwsering => {
 
 // 自动滚动到底部
 watch(messages, async () => {
-  console.log('[messages]', messages)
   await nextTick()
   if (messagesContainer.value) {
     messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
   }
 })
+console.log('[messages]', messages)
 
 const appendMessageText = ({sender, text}) => {
   messages.push({ sender, text });

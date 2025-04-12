@@ -1,33 +1,51 @@
-import { onMounted, type ComputedRef, } from "vue";
-
+import { onMounted, type ComputedRef, ref, computed, watch } from "vue";
+import { playAudio } from "../utils";
 type AudioPlayerProps = {
   audioUrls: ComputedRef<string[]>;
-  audioRef: ComputedRef<any>;
 }
 
-export const useAudioPlayer = ({audioUrls, audioRef}: AudioPlayerProps) => {
-  const playAudio = async(url: string) => {
-    audioRef.value.src = url;
-    audioRef.value.style.display = 'block';
-    audioRef.value.play();
-    return new Promise((resolve) => {
-      audioRef.value.addEventListener('ended', () => {
-        console.log('current audio playing ended')
-        resolve('')
-      })
-    })
-  }
+export const useAudioPlayer = ({audioUrls}: AudioPlayerProps) => {
+  const audioRef = ref(new Audio())
+  const playedCount = ref(0)
+  const urls = ref<string[]>([])
+  let timer = null as any
 
+  watch(audioUrls, list => {
+    urls.value = list
+  }, {
+    deep: true
+  })
   const checkAndPlayAudioIndex = (index: number) => {
     // 每0.5秒轮训看audioUrls数组里对应的index是否有值
-    let timer = setInterval(async() => {
-      if (audioUrls.value?.[index]) {
+    timer = setInterval(async() => {
+      console.log('urls.value?.[index]', JSON.stringify(urls.value), index)
+      if (urls.value?.[index]) {
         clearInterval(timer)
-        await playAudio(audioUrls.value[index])
+        await playAudio(audioRef.value, urls.value[index])
+        playedCount.value += 1
         checkAndPlayAudioIndex(index+1)
       }
     }, 500)
+    return timer
   }
+
+  const finished = computed(() => {
+    return playedCount.value === audioUrls.value.length
+  })
+
+  const reset = () => {
+    playedCount.value = 0
+    clearInterval(timer)
+    checkAndPlayAudioIndex(0)
+  }
+
+  // watch(finished, flag => {
+  //   if (flag) {
+  //     playedCount.value = 0
+  //     clearInterval(timer)
+  //     checkAndPlayAudioIndex(0)
+  //   }
+  // })
 
   const start = () => {
     checkAndPlayAudioIndex(0)
@@ -35,4 +53,9 @@ export const useAudioPlayer = ({audioUrls, audioRef}: AudioPlayerProps) => {
   onMounted(() => {
     start()
   })
+
+  return {
+    finished,
+    reset
+  }
 }
