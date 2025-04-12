@@ -24,8 +24,8 @@
         <div v-if="msg.sender === MESSAGE_TYPES.ROBOT" class="bot-message-box">
           <img class="photo" :src="robotPhoto" alt="" />
           <div>
-            <div class="voice-bar" @click="playUrls(msg)">
-              <div v-if="msg.duration" style="width: 100%;display: flex; justify-content: space-between; align-items: center; padding: 0 20px;">
+            <div class="voice-bar">
+              <div @click="playUrls(msg)" v-if="msg.duration" style="width: 100%;display: flex; justify-content: space-between; align-items: center; padding: 0 20px;">
                 <svg t="1744441693665" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1478" width="28" height="28"><path d="M729.6 512c0 131.2-51.2 256-144 352l22.4 22.4 22.4 22.4c105.6-105.6 163.2-246.4 163.2-396.8S736 224 630.4 118.4l-3.2-3.2-22.4 22.4-22.4 22.4 3.2 3.2c92.8 92.8 144 217.6 144 348.8z" fill="#707070" p-id="1479"></path><path d="M483.2 761.6s-3.2 0 0 0l22.4 22.4 22.4 22.4c163.2-163.2 163.2-425.6 0-585.6l-3.2-3.2-22.4 22.4-22.4 22.4 3.2 3.2c134.4 137.6 134.4 358.4 0 496z" fill="#707070" p-id="1480"></path><path d="M380.8 659.2c0 3.2 0 3.2 0 0l22.4 22.4 22.4 22.4c105.6-105.6 105.6-278.4 0-387.2l-3.2-3.2-22.4 22.4-22.4 22.4 3.2 3.2c83.2 86.4 83.2 217.6 0 297.6zM316.8 595.2c44.8-44.8 44.8-118.4 0-163.2l-3.2-3.2L230.4 512l86.4 83.2c-3.2 0-3.2 0 0 0z" fill="#707070" p-id="1481"></path></svg>
                 <Playing v-if="msg.isPlaying" />
                 <span>{{ msg.duration }}"</span>
@@ -57,16 +57,17 @@
 import { ref, reactive, watch, nextTick, onMounted, computed } from 'vue'
 import { useAudioDownloader } from '../composables/useAudioDownloader';
 import { useAudioPlayer } from '../composables/useAudioPlayer';
-import { playAudioUrls, punctuationIndex, calculateDurations } from '../utils';
+import { playAudioUrls, punctuationIndex, calculateDurations, downloadAudio } from '../utils';
 import robotPhoto from '../assets/robot-photo.png';
 import { MESSAGE_TYPES, TEMPERATURE, TOP_P } from '../utils/constants';
 import LoadingDots from './LoadingDots.vue';
 import Playing from './Playing.vue';
 const sessionId = ref(Date.now().toString());
+const preText = ref('我可以帮你聊聊心理学相关的问题，比如情绪管理、人际关系、个人成长等。你最近有什么困扰吗？')
 
 const messages = reactive([
   {
-    text: '我可以帮你聊聊心理学相关的问题，比如情绪管理、人际关系、个人成长等。你最近有什么困扰吗？',
+    text: preText.value,
     sender: MESSAGE_TYPES.ROBOT,
     audioUrls: []
   }
@@ -86,6 +87,14 @@ const { audioUrls, finished: downloadingFinished, reset: resetDownloader } = use
 const { finished: audioPlayingFinished, reset: resetAudioPlayer } = useAudioPlayer({
   audioUrls,
   downloadingFinished
+})
+
+onMounted(async() => {
+  const audioUrl = await downloadAudio(preText.value)
+  if (audioUrl) {
+    messages[0].audioUrls = [audioUrl]
+    messages[0].duration = await calculateDurations([audioUrl])
+  }
 })
 
 watch(downloadingFinished, async(finished) => {
