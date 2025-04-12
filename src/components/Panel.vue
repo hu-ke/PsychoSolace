@@ -23,7 +23,7 @@
         <div v-if="msg.sender === MESSAGE_TYPES.ROBOT" class="bot-message-box">
           <img class="photo" :src="robotPhoto" alt="" />
           <div>
-            <div class="voice-bar">3"</div>
+            <div class="voice-bar" @click="playAudioUrls(msg.audioUrls)">{{ msg.duration }}"</div>
             <div class="bubble bot-bubble">{{ msg.text }}</div>
           </div>
         </div>
@@ -49,9 +49,29 @@
 <script setup>
 import { ref, reactive, watch, nextTick, onMounted, computed } from 'vue'
 import { useAudioDownloader } from '../composables/useAudioDownloader';
-import { useAudioPlayer } from '../composables/useAudioPlayer';
+import { useAudioPlayer, playAudioUrls } from '../composables/useAudioPlayer';
 import robotPhoto from '../assets/robot-photo.png';
 const sessionId = ref(Date.now().toString());
+const calculateDurations = async(audioUrls) => {
+  return new Promise((resolve, reject) => {
+    const durations = []
+    for (let i = 0; i < audioUrls.length; i++) {
+      const url = audioUrls[i]
+      const audio = new Audio(url)
+      audio.onloadedmetadata = function() {
+        durations.push(audio.duration)
+        if (durations.length === audioUrls.length) {
+          const total = durations.reduce((accu, current) => {
+            return accu + current
+          }, 0)
+          resolve(total)
+        }
+        // 如果需要释放资源，记得在合适的时机调用 URL.revokeObjectURL(audioUrl);
+        // URL.revokeObjectURL(audioUrl); 
+      }
+    }
+  })
+}
 const temperature = 0.7
 const top_p = 0.8
 const punctuation = '，。；：“”、?？！!'
@@ -75,6 +95,7 @@ const messages = reactive([
   {
     text: '我可以帮你聊聊心理学相关的问题，比如情绪管理、人际关系、个人成长等。你最近有什么困扰吗？',
     sender: MESSAGE_TYPES.ROBOT,
+    audioUrls: []
   }
 ])
 const audioPlayer = ref()
@@ -85,13 +106,26 @@ const isAnswering = ref(false)
 const buffer = ref('');
 const textChunks = ref([])
 
-const audioUrls = useAudioDownloader({
+const { audioUrls, finished: downloadingFinished, reset } = useAudioDownloader({
   textList: textChunks
 })
 
+// 按序轮询检测播放，不必等audioUrls全部加载完
 useAudioPlayer({
   audioRef: audioPlayer,
-  audioUrls
+  audioUrls,
+})
+
+console.log('downloadingFinished', downloadingFinished)
+watch(downloadingFinished, async(finished) => {
+  if (finished) {
+    await updateLastMessageAudioUrls({
+      sender: MESSAGE_TYPES.ROBOT,
+      audioUrls: audioUrls.value
+    })
+    textChunks.value = []
+    reset()
+  }
 })
 
 const lastRobotText = computed(() => {
@@ -109,10 +143,11 @@ watch(buffer, bf => {
     let prevStr = textChunks.value.join('')
     let currentStr = bf.slice(prevStr.length)
     let idx = punctuationIndex(currentStr)
-    if (idx > -1) {
-      textChunks.value.push(currentStr.slice(0, idx + 1))
+    const str = currentStr.slice(0, idx + 1)
+    if (idx > -1 && str) {
+      textChunks.value.push(str)
     }
-    updateLastMessage({
+    updateLastMessageText({
       sender: MESSAGE_TYPES.ROBOT,
       text: bf
     });
@@ -123,27 +158,39 @@ watch(isAnswering, anwsering => {
   // 本轮回答已经结束，将剩余的消息append到textChunks里面
   if (!anwsering) {
     const remainString = lastRobotText.value.slice(textChunks.value.join('').length)
-    textChunks.value.push(remainString)
+    if (remainString) {
+      textChunks.value.push(remainString)
+    }
   }
 })
 
 // 自动滚动到底部
 watch(messages, async () => {
+  console.log('[messages]', messages)
   await nextTick()
   if (messagesContainer.value) {
     messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
   }
 })
 
-const appendMessage = ({sender, text}) => {
+const appendMessageText = ({sender, text}) => {
   messages.push({ sender, text });
 };
 
-const updateLastMessage = ({sender, text}) => {
-  const robotMessages = messages.filter(m => m.sender === sender);
-  if (robotMessages.length > 0) {
-    const lastMessage = robotMessages[robotMessages.length - 1];
+const updateLastMessageText = ({sender, text}) => {
+  const rMessages = messages.filter(m => m.sender === sender);
+  if (rMessages.length > 0) {
+    const lastMessage = rMessages[rMessages.length - 1];
     lastMessage.text = text;
+  }
+};
+
+const updateLastMessageAudioUrls = async({sender, audioUrls}) => {
+  const rMessages = messages.filter(m => m.sender === sender);
+  if (rMessages.length > 0) {
+    const lastMessage = rMessages[rMessages.length - 1];
+    lastMessage.audioUrls = audioUrls;
+    lastMessage.duration = await calculateDurations(audioUrls)
   }
 };
 
@@ -152,11 +199,11 @@ const sendMessage = async() => {
   if (!text) return
 
   // 添加用户消息
-  appendMessage({
+  appendMessageText({
     sender: MESSAGE_TYPES.USER,
     text
   })
-  appendMessage({
+  appendMessageText({
     sender: MESSAGE_TYPES.ROBOT,
     text: buffer.value
   })

@@ -1,4 +1,4 @@
-import { onMounted, ref, watch, type ComputedRef, } from "vue";
+import { onMounted, ref, watch, type ComputedRef, computed } from "vue";
 
 type AudioDownloaderProps = {
   textList: ComputedRef<string[]>;
@@ -74,5 +74,20 @@ export const useAudioDownloader = ({textList}: AudioDownloaderProps) => {
     await loadModels()
   })
 
-  return audioUrls
+  const finished = computed(() => {
+    console.log('audioUrls', audioUrls.value)
+    console.log('textList.value', textList.value)
+    return textList.value?.length === audioUrls.value?.length && !audioUrls.value.find((url:string) => !url)
+  })
+
+  const reset = () => {
+    audioIndexUrlMap.value = {}
+    audioUrls.value = []
+  }
+
+  return {
+    audioUrls,
+    finished,
+    reset
+  }
 }
