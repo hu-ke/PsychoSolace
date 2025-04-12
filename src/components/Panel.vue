@@ -18,9 +18,9 @@
         v-for="(msg, index) in messages"
         :key="index"
         class="message"
-        :class="msg.sender === 'user' ? 'user-message' : 'bot-message'"
+        :class="msg.sender === MESSAGE_TYPES.USER ? 'user-message' : 'bot-message'"
       >
-        <div v-if="msg.sender === 'bot'" class="bot-message-box">
+        <div v-if="msg.sender === MESSAGE_TYPES.ROBOT" class="bot-message-box">
           <img class="photo" :src="robotPhoto" alt="" />
           <div>
             <div class="voice-bar">3"</div>
@@ -42,23 +42,85 @@
       >
       <button class="voice-btn" @mousedown="startVoice" @mouseup="endVoice">语音</button>
     </div>
+    <audio ref="audioPlayer" controls style="visibility: hidden;"></audio>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, watch, nextTick, onMounted } from 'vue'
+import { ref, reactive, watch, nextTick, onMounted, computed } from 'vue'
+import { useAudio } from '../composables/useAudio';
 import robotPhoto from '../assets/robot-photo.png';
+const sessionId = ref(Date.now().toString());
+const temperature = 0.7
+const top_p = 0.8
+const punctuation = '，。；：“”、?？！!'
+const punctuationIndex = (str) => {
+  for (let i = 0; i < punctuation.length; i++) {
+    let punct = punctuation[i]
+    let idx = str.indexOf(punct)
+    if (idx > -1) {
+      return idx
+    }
+  }
+  return -1
+}
+
+const MESSAGE_TYPES = {
+  USER: 'user',
+  ROBOT: 'robot'
+}
 
 const messages = reactive([
   {
     text: '我可以帮你聊聊心理学相关的问题，比如情绪管理、人际关系、个人成长等。你最近有什么困扰吗？',
-    sender: 'bot',
-    status: 11
+    sender: MESSAGE_TYPES.ROBOT,
   }
 ])
+const audioPlayer = ref()
 const inputMessage = ref('')
 const showVoiceTip = ref(false)
 const messagesContainer = ref(null)
+const isAnswering = ref(false)
+const buffer = ref('');
+const textChunks = ref([])
+
+useAudio({
+  audioRef: audioPlayer,
+  textList: textChunks
+})
+
+const lastRobotText = computed(() => {
+  const robotMessages = messages.filter(m => m.sender === MESSAGE_TYPES.ROBOT);
+  if (robotMessages.length > 0) {
+    const lastMessage = robotMessages[robotMessages.length - 1];
+    return lastMessage?.text || ''
+  }
+  return ''
+})
+
+watch(buffer, bf => {
+  if (bf) {
+    console.log('[bf]', bf)
+    let prevStr = textChunks.value.join('')
+    let currentStr = bf.slice(prevStr.length)
+    let idx = punctuationIndex(currentStr)
+    if (idx > -1) {
+      textChunks.value.push(currentStr.slice(0, idx + 1))
+    }
+    updateLastMessage({
+      sender: MESSAGE_TYPES.ROBOT,
+      text: bf
+    });
+  }
+})
+
+watch(isAnswering, anwsering => {
+  // 本轮回答已经结束，将剩余的消息append到textChunks里面
+  if (!anwsering) {
+    const remainString = lastRobotText.value.slice(textChunks.value.join('').length)
+    textChunks.value.push(remainString)
+  }
+})
 
 // 自动滚动到底部
 watch(messages, async () => {
@@ -68,43 +130,80 @@ watch(messages, async () => {
   }
 })
 
-onMounted(() => {
-  sendMessage()
-  setTimeout(() => {
-    sendMessage()
-    setTimeout(() => {
-      sendMessage()
-      setTimeout(() => {
-        sendMessage()
-        setTimeout(() => {
-          sendMessage()
-        }, 2000)
-      }, 2000)
-    }, 2000)
-  }, 2000)
-})
+const appendMessage = ({sender, text}) => {
+  messages.push({ sender, text });
+};
 
-const generateStatus = () => Math.floor(Math.random() * 12)
+const updateLastMessage = ({sender, text}) => {
+  const robotMessages = messages.filter(m => m.sender === sender);
+  if (robotMessages.length > 0) {
+    const lastMessage = robotMessages[robotMessages.length - 1];
+    lastMessage.text = text;
+  }
+};
 
-const sendMessage = () => {
-  const text = inputMessage.value.trim() || '你好'
+const sendMessage = async() => {
+  const text = inputMessage.value.trim()
   if (!text) return
 
-  messages.push({
-    text,
-    sender: 'user',
-    status: generateStatus()
+  // 添加用户消息
+  appendMessage({
+    sender: MESSAGE_TYPES.USER,
+    text
+  })
+  appendMessage({
+    sender: MESSAGE_TYPES.ROBOT,
+    text: buffer.value
   })
 
+  // 请求参数
+  const params = {
+    message: text,
+    session_id: sessionId.value,
+    temperature,
+    top_p
+  }
+
+  try {
+    const response = await fetch('http://127.0.0.1:6006/chatapi/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    isAnswering.value = true
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunks = decoder.decode(value).split('\n');
+      for (const chunk of chunks) {
+        if (!chunk) continue;
+        const data = JSON.parse(chunk);
+        if (!data.is_final) {
+          buffer.value = data.content;
+        }
+      }
+    }
+    buffer.value = '';
+  } catch (error) {
+    console.error('Error:', error);
+  } finally {
+    isAnswering.value = false
+  }
+
   // 模拟机器人回复
-  setTimeout(() => {
-    const botResponse = getBotResponse(text)
-    messages.push({
-      text: botResponse,
-      sender: 'bot',
-      status: generateStatus()
-    })
-  }, 1000)
+  // setTimeout(() => {
+  //   const botResponse = getBotResponse(text)
+  //   messages.push({
+  //     text: botResponse,
+  //     sender: 'bot',
+  //   })
+  // }, 1000)
 
   inputMessage.value = ''
 }
@@ -196,13 +295,6 @@ const endVoice = () => {
   border-radius: 18px;
   line-height: 1.5;
   position: relative;
-}
-
-.status {
-  color: #666;
-  font-size: 0.8em;
-  margin-left: 8px;
-  align-self: flex-end;
 }
 
 .input-container {
