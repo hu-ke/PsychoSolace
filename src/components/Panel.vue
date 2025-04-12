@@ -42,13 +42,14 @@
       >
       <button class="voice-btn" @mousedown="startVoice" @mouseup="endVoice">语音</button>
     </div>
-    <audio ref="audioPlayer" controls style="visibility: hidden;"></audio>
+    <audio ref="audioPlayer" controls style="visibility: hidden; position: fixed;"></audio>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, watch, nextTick, onMounted, computed } from 'vue'
-import { useAudio } from '../composables/useAudio';
+import { useAudioDownloader } from '../composables/useAudioDownloader';
+import { useAudioPlayer } from '../composables/useAudioPlayer';
 import robotPhoto from '../assets/robot-photo.png';
 const sessionId = ref(Date.now().toString());
 const temperature = 0.7
@@ -84,9 +85,13 @@ const isAnswering = ref(false)
 const buffer = ref('');
 const textChunks = ref([])
 
-useAudio({
-  audioRef: audioPlayer,
+const audioUrls = useAudioDownloader({
   textList: textChunks
+})
+
+useAudioPlayer({
+  audioRef: audioPlayer,
+  audioUrls
 })
 
 const lastRobotText = computed(() => {
@@ -196,24 +201,7 @@ const sendMessage = async() => {
     isAnswering.value = false
   }
 
-  // 模拟机器人回复
-  // setTimeout(() => {
-  //   const botResponse = getBotResponse(text)
-  //   messages.push({
-  //     text: botResponse,
-  //     sender: 'bot',
-  //   })
-  // }, 1000)
-
   inputMessage.value = ''
-}
-
-const getBotResponse = (userMessage) => {
-  const responses = {
-    'hello': '你好呀，刚刚说到学习跟不上，你觉得主要是什么原因呢？',
-    'default': '学习跟不上确实让人有点焦虑。你觉得是哪个方面的问题呢？是时间管理、学习方法，还是其他原因？'
-  }
-  return responses[userMessage.toLowerCase()] || responses['default']
 }
 
 // 语音功能占位

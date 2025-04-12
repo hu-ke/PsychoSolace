@@ -1,7 +1,6 @@
 import { onMounted, ref, watch, type ComputedRef, } from "vue";
 
-type AudioProps = {
-  audioRef: ComputedRef<any>;
+type AudioDownloaderProps = {
   textList: ComputedRef<string[]>;
 }
 
@@ -11,7 +10,7 @@ const loadModels = async() => {
   await fetch(`${baseUrl}/set_sovits_weights?weights_path=/root/GPT-SoVITS/SoVITS_weights_v2/huke_e4_s36.pth`)
 }
 
-export const useAudio = ({audioRef, textList}: AudioProps) => {
+export const useAudioDownloader = ({textList}: AudioDownloaderProps) => {
 
   const audioIndexUrlMap = ref<{ [key: number]: string }>({})
   const audioUrls = ref<any>([])
@@ -61,18 +60,6 @@ export const useAudio = ({audioRef, textList}: AudioProps) => {
     })
   }
 
-  const playAudio = async(url: string) => {
-    audioRef.value.src = url;
-    audioRef.value.style.display = 'block';
-    audioRef.value.play();
-    return new Promise((resolve) => {
-      audioRef.value.addEventListener('ended', () => {
-        console.log('current audio playing ended')
-        resolve('')
-      })
-    })
-  }
-
   watch(() => [...textList.value], async(list, prevList) => {
     list.slice(prevList.length)
     for (let i = prevList.length; i < list.length; i++) {
@@ -83,24 +70,9 @@ export const useAudio = ({audioRef, textList}: AudioProps) => {
     }
   })
 
-  const checkAndPlayAudioIndex = (index: number) => {
-    console.log('[checkAndPlayAudioIndex]', index)
-    // 每0.5秒轮训看audioUrls数组里对应的index是否有值
-    let timer = setInterval(async() => {
-      if (audioUrls.value?.[index]) {
-        clearInterval(timer)
-        await playAudio(audioUrls.value[index])
-        checkAndPlayAudioIndex(index+1)
-      }
-    }, 500)
-  }
-
-  const start = () => {
-    checkAndPlayAudioIndex(0)
-  }
-
   onMounted(async() => {
     await loadModels()
-    start()
   })
+
+  return audioUrls
 }
