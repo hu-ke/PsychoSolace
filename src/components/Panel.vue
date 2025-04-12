@@ -49,47 +49,11 @@
 <script setup>
 import { ref, reactive, watch, nextTick, onMounted, computed } from 'vue'
 import { useAudioDownloader } from '../composables/useAudioDownloader';
-import { useAudioPlayer, playAudioUrls } from '../composables/useAudioPlayer';
+import { useAudioPlayer } from '../composables/useAudioPlayer';
+import { playAudioUrls, punctuationIndex, calculateDurations } from '../utils';
 import robotPhoto from '../assets/robot-photo.png';
+import { MESSAGE_TYPES, TEMPERATURE, TOP_P } from '../utils/constants';
 const sessionId = ref(Date.now().toString());
-const calculateDurations = async(audioUrls) => {
-  return new Promise((resolve, reject) => {
-    const durations = []
-    for (let i = 0; i < audioUrls.length; i++) {
-      const url = audioUrls[i]
-      const audio = new Audio(url)
-      audio.onloadedmetadata = function() {
-        durations.push(audio.duration)
-        if (durations.length === audioUrls.length) {
-          const total = durations.reduce((accu, current) => {
-            return accu + current
-          }, 0)
-          resolve(total)
-        }
-        // 如果需要释放资源，记得在合适的时机调用 URL.revokeObjectURL(audioUrl);
-        // URL.revokeObjectURL(audioUrl); 
-      }
-    }
-  })
-}
-const temperature = 0.7
-const top_p = 0.8
-const punctuation = '，。；：“”、?？！!'
-const punctuationIndex = (str) => {
-  for (let i = 0; i < punctuation.length; i++) {
-    let punct = punctuation[i]
-    let idx = str.indexOf(punct)
-    if (idx > -1) {
-      return idx
-    }
-  }
-  return -1
-}
-
-const MESSAGE_TYPES = {
-  USER: 'user',
-  ROBOT: 'robot'
-}
 
 const messages = reactive([
   {
@@ -116,7 +80,6 @@ useAudioPlayer({
   audioUrls,
 })
 
-console.log('downloadingFinished', downloadingFinished)
 watch(downloadingFinished, async(finished) => {
   if (finished) {
     await updateLastMessageAudioUrls({
@@ -139,7 +102,6 @@ const lastRobotText = computed(() => {
 
 watch(buffer, bf => {
   if (bf) {
-    console.log('[bf]', bf)
     let prevStr = textChunks.value.join('')
     let currentStr = bf.slice(prevStr.length)
     let idx = punctuationIndex(currentStr)
@@ -212,8 +174,8 @@ const sendMessage = async() => {
   const params = {
     message: text,
     session_id: sessionId.value,
-    temperature,
-    top_p
+    temperature: TEMPERATURE,
+    top_p: TOP_P
   }
 
   try {
