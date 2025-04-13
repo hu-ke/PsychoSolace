@@ -12,7 +12,7 @@
         </a>
         让我们从一句"你好"开始，书写属于我们的治愈故事吧❤️
       </div>
-      <span style="position: absolute;right: 30px; top: 30px; cursor: pointer;" @click="closeIntro">
+      <span style="position: absolute;right: 30px; top: 30px; cursor: pointer; text-decoration: underline;" @click="closeIntro">
         关闭
       </span>
     </div>

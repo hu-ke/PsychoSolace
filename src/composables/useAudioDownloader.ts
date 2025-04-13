@@ -47,7 +47,8 @@ export const useAudioDownloader = ({textList}: AudioDownloaderProps) => {
   }
 
   return {
-    audioUrls: computed(() => audioUrls.value.filter((url: string) => url)),
+    // audioUrls: computed(() => audioUrls.value.filter((url: string) => url)),
+    audioUrls,
     finished,
     reset,
     ttsModelLoaded
