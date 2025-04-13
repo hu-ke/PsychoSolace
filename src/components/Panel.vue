@@ -1,17 +1,20 @@
 <template>
   <div class="chat-container">
-    <div class="intro">
+    <div v-if="!introHidden" class="intro">
       <p>亲爱的朋友，欢迎来到心灵港湾🌙</p>
       <p>
         这里是基于<a href="https://github.com/scutcyr/SoulChat2.0" target="_blank">SoulChat2.0</a>情感引擎与<a href="https://github.com/RVC-Boss/GPT-SoVITS" target="_blank">GPT_SoVITS</a> AI语音克隆技术打造的温暖空间。我不仅能用最懂你的方式文字交流，还能用治愈声线给予回应，让每次对话都像老友重逢般亲切自然。
       </p>
       <div>
         您可以随时对我说：
-        <div>"今天上司否定了我的方案，好挫败…"</div>
-        <div>"能陪我聊聊童年那棵老槐树吗？"</div>
-        <div>"用妈妈的声音给我读首诗好吗？"</div>
+        <a v-for="msg in sampleMessages" @click="onClickSampleMessage(msg)" style="display: block; cursor: pointer;">
+          {{ msg }}
+        </a>
         让我们从一句"你好"开始，书写属于我们的治愈故事吧❤️
       </div>
+      <span style="position: absolute;right: 30px; top: 30px; cursor: pointer;" @click="closeIntro">
+        关闭
+      </span>
     </div>
 
     <div class="chat-messages" ref="messagesContainer">
@@ -72,6 +75,13 @@ import { useASR } from '../composables/useASR';
 const sessionId = ref(Date.now().toString());
 const preText = ref('我可以帮你聊聊心理学相关的问题，比如情绪管理、人际关系、个人成长等。你最近有什么困扰吗？')
 
+const sampleMessages = ref([
+  '今天上司否定了我的方案，好挫败…',
+  '能陪我聊聊童年那棵老槐树吗？',
+  '今天受老师批评了，不开心'
+])
+
+const introHidden = ref(localStorage.getItem('intro-hidden'))
 const messages = reactive([
   {
     text: preText.value,
@@ -253,6 +263,11 @@ const sendMessage = async() => {
   inputMessage.value = ''
 }
 
+const onClickSampleMessage = (msg) => {
+  inputMessage.value = msg
+  sendMessage()
+}
+
 // 语音功能占位
 const startVoice = () => {
   showVoiceTip.value = true
@@ -275,14 +290,23 @@ const endVoice = () => {
   stopRecording()
   // 结束语音输入处理
 }
+
+const closeIntro = () => {
+  localStorage.setItem('intro-hidden', 1)
+  introHidden.value = true
+}
 </script>
 
 <style lang="scss" scoped>
 .intro {
+  position: relative;
   padding: 20px;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  margin: 0 -20px;
 }
 /* 保持原有样式不变 */
 .chat-container {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   position: relative;
   max-width: 800px;
   margin: 0 auto;
