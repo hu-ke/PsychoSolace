@@ -10,7 +10,10 @@ export const calculateDurations = async(audioUrls: string[]) => {
         durations.push(audio.duration)
         if (durations.length === audioUrls.length) {
           const total = durations.reduce((accu, current) => {
-            return accu + current
+            if (typeof current === 'number' && current > 0) {
+              return accu + current
+            }
+            return accu
           }, 0)
           resolve(Math.ceil(total))
         }
