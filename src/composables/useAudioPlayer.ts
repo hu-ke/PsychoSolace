@@ -1,4 +1,4 @@
-import { onMounted, type ComputedRef, ref, computed, watch } from "vue";
+import { onMounted, type ComputedRef, ref, computed } from "vue";
 import { playAudio } from "../utils";
 type AudioPlayerProps = {
   audioUrls: ComputedRef<string[]>;
