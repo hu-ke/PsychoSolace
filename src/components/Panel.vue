@@ -24,7 +24,7 @@
         <div v-if="msg.sender === MESSAGE_TYPES.ROBOT" class="bot-message-box">
           <img class="photo" :src="robotPhoto" alt="" />
           <div>
-            <div class="voice-bar">
+            <div class="voice-bar" :style="{width: msg.duration ? `${msg.duration * 20}px`: '200px'}">
               <div @click="playUrls(msg)" v-if="msg.duration" style="width: 100%;display: flex; justify-content: space-between; align-items: center; padding: 0 20px;">
                 <svg t="1744441693665" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1478" width="28" height="28"><path d="M729.6 512c0 131.2-51.2 256-144 352l22.4 22.4 22.4 22.4c105.6-105.6 163.2-246.4 163.2-396.8S736 224 630.4 118.4l-3.2-3.2-22.4 22.4-22.4 22.4 3.2 3.2c92.8 92.8 144 217.6 144 348.8z" fill="#707070" p-id="1479"></path><path d="M483.2 761.6s-3.2 0 0 0l22.4 22.4 22.4 22.4c163.2-163.2 163.2-425.6 0-585.6l-3.2-3.2-22.4 22.4-22.4 22.4 3.2 3.2c134.4 137.6 134.4 358.4 0 496z" fill="#707070" p-id="1480"></path><path d="M380.8 659.2c0 3.2 0 3.2 0 0l22.4 22.4 22.4 22.4c105.6-105.6 105.6-278.4 0-387.2l-3.2-3.2-22.4 22.4-22.4 22.4 3.2 3.2c83.2 86.4 83.2 217.6 0 297.6zM316.8 595.2c44.8-44.8 44.8-118.4 0-163.2l-3.2-3.2L230.4 512l86.4 83.2c-3.2 0-3.2 0 0 0z" fill="#707070" p-id="1481"></path></svg>
                 <Playing v-if="msg.isPlaying" />
@@ -41,25 +41,31 @@
 
     <div class="voice-tip" v-show="showVoiceTip">录音中...松开发送</div>
     <div class="input-container">
+      <img @click="toggleInputMode" :src="inputMode === INPUT_MODE.TEXT ? microphoneImg : inputTextImg" style="width: 40px; height: 40px; cursor: pointer;"/>
       <input
+        v-if="inputMode === INPUT_MODE.TEXT"
         v-model="inputMessage"
         type="text"
         class="input-box"
         placeholder="说点什么吧..."
         @keyup.enter="sendMessage"
       >
-      <button class="voice-btn" @mousedown="startVoice" @mouseup="endVoice">按住说话</button>
+      <div v-else class="input-box" style="cursor: pointer;" @mousedown="startVoice" @mouseup="endVoice">按住说话</div>
+      <button v-if="inputMode === INPUT_MODE.TEXT" class="voice-btn" @click="sendMessage">发送</button>
+      <!-- <button class="voice-btn" @mousedown="startVoice" @mouseup="endVoice">按住说话</button> -->
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, watch, nextTick, onMounted, computed } from 'vue'
+import { ref, reactive, watch, nextTick, onMounted, computed } from 'vue';
 import { useAudioDownloader } from '../composables/useAudioDownloader';
 import { useAudioPlayer } from '../composables/useAudioPlayer';
 import { playAudioUrls, punctuationIndex, calculateDurations, downloadAudio } from '../utils';
 import robotPhoto from '../assets/robot-photo.png';
-import { MESSAGE_TYPES, TEMPERATURE, TOP_P } from '../utils/constants';
+import inputTextImg from '../assets/input_text.png';
+import microphoneImg from '../assets/static-microphone.jpg';
+import { MESSAGE_TYPES, TEMPERATURE, TOP_P, INPUT_MODE } from '../utils/constants';
 import LoadingDots from './LoadingDots.vue';
 import Playing from './Playing.vue';
 import { useASR } from '../composables/useASR';
@@ -79,6 +85,7 @@ const messagesContainer = ref(null)
 const isAnswering = ref(false)
 const buffer = ref('');
 const textChunks = ref([])
+const inputMode = ref(INPUT_MODE.VOICE)
 
 const { audioUrls, finished: downloadingFinished, reset: resetDownloader } = useAudioDownloader({
   textList: textChunks
@@ -255,7 +262,13 @@ const startVoice = () => {
 
 watch(transcribedText, text => {
   console.log('[transcribedText]', text)
+  inputMessage.value = text
+  sendMessage()
 })
+
+const toggleInputMode = () => {
+  inputMode.value = inputMode.value === INPUT_MODE.TEXT ? INPUT_MODE.VOICE : INPUT_MODE.TEXT
+}
 
 const endVoice = () => {
   showVoiceTip.value = false
@@ -352,11 +365,12 @@ const endVoice = () => {
   }
 
   & > .voice-btn {
+    border: none;
     padding: 12px 20px;
-    border: 1px solid #007AFF;
+    // border: 1px solid #007AFF;
+    background-color: #007AFF;
     border-radius: 25px;
-    background: white;
-    color: #007AFF;
+    color: #fff;
     cursor: pointer;
   }
 }

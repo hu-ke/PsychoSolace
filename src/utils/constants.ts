@@ -7,3 +7,7 @@ export const MESSAGE_TYPES = {
   ROBOT: 'robot'
 }
 export const BASE_URL = 'http://127.0.0.1:6006/chatapi'
+export const INPUT_MODE = {
+  TEXT: 'text',
+  VOICE: 'voice'
+}
