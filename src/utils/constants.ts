@@ -6,7 +6,7 @@ export const MESSAGE_TYPES = {
   USER: 'user',
   ROBOT: 'robot'
 }
-export const BASE_URL = 'http://127.0.0.1:6006/chatapi'
+export const BASE_URL = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:6006/chatapi'
 export const INPUT_MODE = {
   TEXT: 'text',
   VOICE: 'voice'
