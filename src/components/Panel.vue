@@ -68,7 +68,7 @@ import { playAudioUrls, punctuationIndex, calculateDurations, downloadAudio } fr
 import robotPhoto from '../assets/robot-photo.png';
 import inputTextImg from '../assets/input_text.png';
 import microphoneImg from '../assets/static-microphone.jpg';
-import { MESSAGE_TYPES, TEMPERATURE, TOP_P, INPUT_MODE } from '../utils/constants';
+import { MESSAGE_TYPES, TEMPERATURE, TOP_P, INPUT_MODE, BASE_URL } from '../utils/constants';
 import LoadingDots from './LoadingDots.vue';
 import Playing from './Playing.vue';
 import { useASR } from '../composables/useASR';
@@ -229,7 +229,7 @@ const sendMessage = async() => {
   }
 
   try {
-    const response = await fetch('http://127.0.0.1:6006/chatapi/chat', {
+    const response = await fetch(`${BASE_URL}/chatapi/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
