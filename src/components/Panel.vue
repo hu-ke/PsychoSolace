@@ -53,9 +53,8 @@
         placeholder="说点什么吧..."
         @keyup.enter="sendMessage"
       >
-      <div v-else class="input-box" style="cursor: pointer;" @mousedown="startVoice" @mouseup="endVoice">按住说话</div>
+      <div v-else class="input-box" style="cursor: pointer;" @touchstart="startVoice" @mousedown="startVoice" @touchend="endVoice" @mouseup="endVoice">按住说话</div>
       <button v-if="inputMode === INPUT_MODE.TEXT" class="voice-btn" @click="sendMessage">发送</button>
-      <!-- <button class="voice-btn" @mousedown="startVoice" @mouseup="endVoice">按住说话</button> -->
     </div>
   </div>
 </template>
@@ -229,7 +228,7 @@ const sendMessage = async() => {
   }
 
   try {
-    const response = await fetch(`${BASE_URL}/chatapi/chat`, {
+    const response = await fetch(`${BASE_URL}/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
