@@ -13,7 +13,7 @@ export const useAudioPlayer = ({audioUrls, downloadingFinished}: AudioPlayerProp
   const checkAndPlayAudioIndex = (index: number) => {
     // 每0.5秒轮训看audioUrls数组里对应的index是否有值
     timer = setInterval(async() => {
-      console.log('urls.value?.[index]', JSON.stringify(audioUrls.value), index)
+      // console.log('urls.value?.[index]', JSON.stringify(audioUrls.value), index)
       if (audioUrls.value?.[index]) {
         clearInterval(timer)
         await playAudio(audioRef.value, audioUrls.value[index])
