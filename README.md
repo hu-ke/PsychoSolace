@@ -1,6 +1,7 @@
 # PsychoSolace
 PsychoSolace 是一个融合了 [SoulChat2.0](https://github.com/scutcyr/SoulChat2.0) 心理咨询模型与 [GPT-SoVITS](https://github.com/RVC-Boss/GPT-SoVITS) 语音克隆模型的特色聊天室。
 ## 1.效果展示
+[在线体验](https://reader.guru/chat)，不保证服务一直在线，因为GPU按时收费。
 ![image](https://github.com/user-attachments/assets/6c63f68c-e6e9-4019-afe2-69e2a7c01af5)
 
 
