@@ -21,6 +21,10 @@ export const calculateDurations = async(audioUrls: string[]) => {
         // 如果需要释放资源，记得在合适的时机调用 URL.revokeObjectURL(audioUrl);
         // URL.revokeObjectURL(audioUrl); 
       }
+      audio.onerror = function(e) {
+        console.error('[audio load error]', url, e)
+        durations.push(0)
+      }
     }
   })
 }
