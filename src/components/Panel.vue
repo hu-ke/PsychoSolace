@@ -118,11 +118,12 @@ onMounted(async() => {
 
 watch(downloadingFinished, async(finished) => {
   if (finished) {
-    await nextTick()
-    await updateLastMessageAudioUrls({
-      sender: MESSAGE_TYPES.ROBOT,
-      audioUrls: audioUrls.value
-    })
+    setTimeout(async() => {
+      await updateLastMessageAudioUrls({
+        sender: MESSAGE_TYPES.ROBOT,
+        audioUrls: audioUrls.value
+      })
+    }, 1500)
   }
 })
 
