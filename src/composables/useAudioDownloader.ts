@@ -8,7 +8,6 @@ type AudioDownloaderProps = {
 export const useAudioDownloader = ({textList}: AudioDownloaderProps) => {
   const audioIndexUrlMap = ref<{ [key: number]: string }>({})
   const audioUrls = ref<any>([])
-  const ttsModelLoaded = ref(false)
   watch(audioIndexUrlMap, mp => {
     audioUrls.value = Object.assign(audioUrls.value, mp)
   }, {
@@ -25,10 +24,6 @@ export const useAudioDownloader = ({textList}: AudioDownloaderProps) => {
     }
   })
 
-  onMounted(async() => {
-    ttsModelLoaded.value = true
-  })
-
   const finished = computed(() => {
     return textList.value?.length === audioUrls.value?.length && !audioUrls.value.find((url:string) => !url)
   })
@@ -42,6 +37,5 @@ export const useAudioDownloader = ({textList}: AudioDownloaderProps) => {
     audioUrls,
     finished,
     reset,
-    ttsModelLoaded
   }
 }
