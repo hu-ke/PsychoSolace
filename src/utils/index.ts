@@ -1,6 +1,7 @@
 import { BASE_URL, PUNCTUATION } from "./constants"
 
 export const calculateDurations = async(audioUrls: string[]) => {
+  console.log('[calculateDurations]', audioUrls)
   return new Promise((resolve) => {
     const durations = [] as number[]
     for (let i = 0; i < audioUrls.length; i++) {
