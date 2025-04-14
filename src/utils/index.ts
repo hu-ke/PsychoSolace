@@ -57,7 +57,8 @@ export const playAudioUrls = async(audioUrls: string[]) => {
 }
 
 export const downloadAudio = async(text: string): Promise<string> => {
-  const media_type = 'wav'
+  // const media_type = 'wav' // 616kb 4.15s
+  const media_type = 'aac' // 153kb 8.52s
   const url = `${BASE_URL}/tts?text=${text}&text_lang=zh&ref_audio_path=huke-sample.m4a&prompt_lang=zh&prompt_text=新昌AI,新昌小程序所需材料,精修,小程序代码,资讯信息&text_split_method=cut5&batch_size=1&media_type=${media_type}&streaming_mode=true`
   return new Promise(async(resolve, reject) => {
     try {
