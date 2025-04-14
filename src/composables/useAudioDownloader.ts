@@ -1,4 +1,4 @@
-import { onMounted, ref, watch, type ComputedRef, computed } from "vue";
+import { ref, watch, type ComputedRef, computed } from "vue";
 import { downloadAudio } from '../utils/index'
 
 type AudioDownloaderProps = {
