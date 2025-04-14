@@ -7,7 +7,7 @@ export const calculateDurations = async(audioUrls: string[]) => {
     for (let i = 0; i < audioUrls.length; i++) {
       const url = audioUrls[i]
       const audio = new Audio(url)
-      audio.onloadedmetadata = function() {
+      audio.oncanplay = function() {
         console.log('[audio duration]', audio.duration, url)
         durations.push(audio.duration)
         if (durations.length === audioUrls.length) {
